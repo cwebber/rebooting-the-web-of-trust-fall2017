@@ -8,13 +8,13 @@ of building federated social systems.
 Users can use implementations of ActivityPub like Mastodon and
 MediaGoblin as libre alternatives to large siloed social networking
 systems such as Facebook, Twitter, YouTube, and
-Instagram.
+Instagram.<sup id="fnr.1">[1](#fn.1)</sup>
 
 In general ActivityPub follows the client-server paradigm that has
 been popular on the World Wide Web, while restoring some level of
 decentralization.
 Current implementations of ActivityPub go as far as to bring a level
-of decentralization akin to email,but
+of decentralization akin to email,<sup id="fnr.2">[2](#fn.2)</sup> but
 there are many opportunities to go further.
 By attaching public keys to the profiles of actors (users) on the
 network and using [Linked Data Signatures](https://w3c-dvcg.github.io/ld-signatures/), we can add a web of trust to
@@ -22,14 +22,11 @@ the federated social web and use it to enhance user privacy and assert
 the integrity of messages sent over the network.
 By using a decentralized identifier system such as
 [Decentralized Identifiers (DIDs)](https://w3c-ccg.github.io/did-spec/) we can move fully from a decentralized
-to a distributed system,
+to a distributed system,<sup id="fnr.3">[3](#fn.3)</sup>
 by escaping the core centralization mechanisms of DNS and SSL
 certificate authorities.
 At this point, users could even optionally transition from a
 client-server model system to a fully peer to peer system.
-
-
-![img](./activitypub-decentralized-distributed-diagrams/centralized_decentralized_distributed.png "Centralized, Decentralized, and Distributed drawings, from 'On Distributed Communications, part 1' by Paul Baran, 1964")
 
 # ActivityPub overview
 
@@ -624,10 +621,14 @@ distributed network; the community must build and maintain a healthy
 number of nodes and avoid the temptation to let a few large providers
 control the space of a federated network.</div>
 
-<div class="footdef"><sup><a id="fn.3" name="fn.3" class="footnum" href="#fnr.3">3</a></sup> It is worth spending some time to
+<div class="footdef"><sup><a id="fn.3" name="fn.3" class="footnum" href="#fnr.3">3</a></sup>
+It is worth spending some time to
 discuss what is meant by "centralized" versus "distributed" versus
 "decentralized".
-In the figure 4 we see images from
+
+![img](./activitypub-decentralized-distributed-diagrams/centralized_decentralized_distributed.png "Centralized, Decentralized, and Distributed drawings, from 'On Distributed Communications, part 1' by Paul Baran, 1964")
+
+In the figure above we see images from
 Paul Baran's 1964 paper on the subject, and from these shapes we can
 see the kinds of shapes we mean: social silos resemble the the
 spoke-like centralized model, client-server federated social networks
