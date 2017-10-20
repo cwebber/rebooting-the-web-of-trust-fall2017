@@ -133,12 +133,73 @@ the same environment with the same behavior and specified costs.
 
 ## Language environment
 
--   Must also be constrained in both space and time
-    -   space: Execution is done within a limited memory environment
-        (can this be done consistently without having to assign our own
-        costs / implementing our own garbage collector?)
-    -   time: Implementations may need to "count" execution steps and
-        halt a program that runs for too many steps.
+### Constraints on space and time
+
+Space and time must be deterministic in order for Smarm to be fully
+functional.
+In effect, a running Smarm program must have an "accountant" that
+accounts for costs.
+This will incur some extra overhead but has two advantages:
+
+ - We can specify a "budget" for a program in space and time, and be
+   sure that if the program does not reach a fixed point independently
+   (read: halt and return a value) within budget that we can halt the
+   program ourselves.
+ - If Smarm is truly deterministic and all operations and allocations
+   have precise definitions of cost, then the cost of a program in
+   space and time applied to a specified input will always be the same.
+   Having run the program once, we can write it down alongside its
+   value and inform other users exactly what the costs will be before
+   running the program.
+
+This is similar to Etherium's concept of "gas".
+
+**TODO:** Etherium calculates cost for space, but what about time?
+
+**TODO:** Our proposal is fully deterministic for costs.  Is the true
+  same for programs running on Etherium's VM?
+
+#### Time
+
+Each operation executed is accounted for by the accountant.
+Many operations will have the same cost regardless of input; for instance
+`cell-ref` if implemented as a primitive could be reasonably assumed
+to have a cost of 1.
+
+It is possible that some operations may have different costs depending
+on their inputs (for example, the cost of performing some arithmetic
+is different depending on the size of the numbers used).
+One particular challenge may be specifying how these different
+costs are derived.
+
+The time for counter only grows through the execution of a program.
+Upon successful execution of a program, the total counter for time is
+returned.
+
+#### Space
+
+Each allocation of primitive types also needs to specify its cost.
+This may be different depending on the size of inputs generated;
+for instance, vectors would have different sizes depending on their size.
+This is also true of numbers since Scheme's full numeric tower supports
+numbers of arbitrary size, and treating all numbers as the same size
+could lead to an attack where a program simply encodes more data than
+it should be allowed to allocate in large numbers.
+
+Unlike time, the counter for space may grow and shrink over the course
+of the program since Smarm requires garbage collection to properly
+function.
+Upon successful execution of a program, the maximum counter for space
+is returned.
+
+This also raises the important point that garbage collection must be
+run completely at deterministic intervals.
+For example, for every 1000 steps in time, garbage collection could
+be run on space.
+
+
+### Execution environment
+
 -   execution environment
     -   compiles to native code for production, with appropriate obfuscation
         to prevent side channel attacks
