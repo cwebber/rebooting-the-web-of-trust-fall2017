@@ -108,29 +108,28 @@ that module has access to `vector-set!`.)
 For security reasons, it is likely that production execution will
 need to rely on as little external tooling as possible.
 This may mean making some tough decisions.
-For instance, it is arguable that only ISO-8859-1 strings should
-be supported;
+For instance, it is arguable that only ISO-8859-1 strings should be
+supported since fully supporting unicode would require complex
+external libraries (and which may not even be deterministic as
+the unicode database grows).
+Potentially for this reason we could call initial string support
+"bytestrings" instead, and leave open the possibility of full-blown
+unicode strings as an optional part of an environment.
+If this was done we must carefully beware the lessons of Python 2 ->
+Python 3!
 
-supporting full unic
-
--   ISO-8859-1 strings only (sorry! unicode strings would require
-    adding a whole lot of tooling to the language).
-    (Possibly we could call these "bytestrings" and leave open
-    the possibility of unicode strings for later?
-    Beware the lessons of Python 2 -> Python 3!)
--   Source code can be normalized to
-    [canonical s-expressions](http://people.csail.mit.edu/rivest/Sexp.txt).
-    The "display hints" feature could be used for type annotations,
-    though this could also be done by tagging list structures
-    (both are supported in [guile-csexps](https://gitlab.com/dustyweb/guile-csexps)
-    for instance).
--   Some particular core types and procedures will need to be supplied
-    for smart signatures support (linked data slice & dice, signature
-    verification, and???).
-    These could be part of the "base language", though this opens up
-    a debate of just how large the base system should be and where
-    modules (or even simply supplying utilities as arguments to the
-    program) fit in.
+Some basic record types and procedures would need to be supplied for
+linked data processing to meet the needs of smart signatures.
+These could be implemented in Smarm itself, or could be provided
+to the initial environment used.
+Some procedures have high motivation to be implemented externally
+from Smarm, where the costs would be lower, such as 
+Adding to the initial environment opens an interesting question:
+how large should the base system be?
+Expanding the initial environment by enclosing more terms is also
+possible, but these would need to be properly annotated for their
+cost, and two entities running the same program must know to load
+the same environment with the same behavior and specified costs.
 
 ## Language environment
 
@@ -149,6 +148,14 @@ supporting full unic
         code so we don't need to "make a choice"
 
 ## Canonicalization
+
+-   Source code can be normalized to
+    [canonical s-expressions](http://people.csail.mit.edu/rivest/Sexp.txt).
+    The "display hints" feature could be used for type annotations,
+    though this could also be done by tagging list structures
+    (both are supported in [guile-csexps](https://gitlab.com/dustyweb/guile-csexps)
+    for instance).
+
 
 ## Up for consideration
 
