@@ -36,44 +36,83 @@ are, as well as their associated costs... and perhaps that's where
 What follows is a listing of requirements and notes to make this
 language possible.
 
-## Essentials
+## Language essentials
 
--   Smart-signatures (smart contracts) supporting metalanguage
-    means evaluation of a program as predicate.
-    Any "state" should be passed in as arguments to the program.
--   Loosely based on [r5rs](http://www.schemers.org/Documents/Standards/R5RS/), with some changes:
-    -   NO call/cc (undelimited continuations) as those break capabilities
-    -   But delimited continuations are great, if we can get those in,
-        awesome.  Some analysis on how delimited continuations affect
-        capabilities, and the extent to which they are useful
-        (or overkill) in the described system should be explored.
-    -   Will we support writing hygenic macros within the language?
-        Some constructs supplied to the base environment will be
-        written within hygenic macros, but whether a user of the
-        language can feasibly use syntax-rules / syntax-case and
-        friends is up for debate.
-        Passing macros between modules in something like W7 which
-        fundamentally (?) is a run-time system may turn out to be
-        difficult.
-    -   [SRFI-71](https://srfi.schemers.org/srfi-71/srfi-71.html) let/let\*/letrec.  r5rs already specifies multiple value
-        return (a great feature!) but utilizing them via call-by-values
-        is painful.
--   Uses restricted base environment + lexical scope to implement
-    [Jonathan Rees' security kernel based on lambda calculus](http://mumble.net/~jar/pubs/secureos/secureos.html)
-    (See also [Andy Wingo's blogpost on the subject](https://wingolog.org/archives/2011/03/19/bart-and-lisa-hacker-edition))
--   Must also be constrained in both space and time
-    -   space: Execution is done within a limited memory environment
-        (can this be done consistently without having to assign our own
-        costs / implementing our own garbage collector?)
-    -   time: Implementations may need to "count" execution steps and
-        halt a program that runs for too many steps.
--   execution environment
-    -   compiles to native code for production, with appropriate obfuscation
-        to prevent side channel attacks
-    -   however "development environment" can be more loose for fast
-        "live hacking" (have a mutable toplevel, etc)
-    -   Many lisps have long supported both interpreted and compiled
-        code so we don't need to "make a choice"
+Smarm is somewhat of a mash-up of the
+[R5RS](http://www.schemers.org/Documents/Standards/R5RS/)
+version of Scheme and the
+[W7 security kernel](http://mumble.net/~jar/pubs/secureos/secureos.html),
+with some distinctions.
+
+Safety is provided in the language through lexical scoping as a
+security capability substrate.
+A procedure only has access to its environment, which includes the
+module's default environment (which is generally the language's
+default environment, a small standard library of procedures and syntax
+forms), the enclosing environment of any procedure it may have been
+defined within, and the arguments which are called to it within
+invocation.
+Nothing else is available, and what you don't have, you can't use.
+However, procedures can delegate capabilities to other procedures
+by passing as arguments.
+See the [W7 manual](http://mumble.net/~jar/pubs/secureos/secureos.html)
+for more examples; the basic design should be easy to absorb assuming
+one is already familiar with lisp-like syntax and lexical scope
+as aside from those there is nearly nothing to it except what is
+omitted.
+(See also [Andy Wingo's blogpost on the subject](https://wingolog.org/archives/2011/03/19/bart-and-lisa-hacker-edition)
+for an excellent introduction.)
+
+One example of something omitted is every mutating procedure and
+special form in R5RS' standard library; even `set!` is absent from
+Smarm.
+Instead a very limited and controlled form of mutation is provided via
+cells (a kind of "boxed value" provided by W7), which hold the form:
+
+``` scheme
+(let ((a-cell (new-cell 'inital-value)))
+  ;; call something with a-cell's value without granting the
+  ;; ability to mutate a-cell's contents
+  (call-something (cell-ref a-cell))
+  ;; set the contents of a-cell to a new value
+  (cell-set! a-cell 'brand-new-value)
+  ;; call something with a-cell itself, granting the ability
+  ;; for call-something-else to change the cell's contents.
+  (call-something-else a-cell))
+```
+
+Undelimited continutations are also removed from the language (AKA
+`call-with-current-continuation` or `call/cc`) as these break the
+composition that makes capabilities-as-strict-lexical-scope possible
+by throwing away the current environment at invocation and not
+returning a value.
+
+What other "base language primitives" should be provided to the
+language or omitted is up for debate / discussion (with initial
+implementers realistically having the strongest say).
+Certainly the basic forms of `define`, `let`, `let*`, `letrec`,
+`lambda`, `cond`, `begin`, and the full Scheme numeric tower are
+musts, are are a few others.
+Arguably since macros are not provided but multiple value return is,
+some common conveniences should be provided.
+For instance, Guile holds support for a common syntax of `define*` and
+`lambda*`, which supports optional and keyword arguments, which are
+highly desirable.
+But which of these are agreed upon can be worked out as the language
+approaches actual real-world usage.
+(It is also possible that different programs could be tagged with
+different initial environments, but this could provide dangers if for
+instance a module uses vectors and unexpectedly a program calling
+that module has access to `vector-set!`.)
+
+For security reasons, it is likely that production execution will
+need to rely on as little external tooling as possible.
+This may mean making some tough decisions.
+For instance, it is arguable that only ISO-8859-1 strings should
+be supported;
+
+supporting full unic
+
 -   ISO-8859-1 strings only (sorry! unicode strings would require
     adding a whole lot of tooling to the language).
     (Possibly we could call these "bytestrings" and leave open
@@ -93,8 +132,47 @@ language possible.
     modules (or even simply supplying utilities as arguments to the
     program) fit in.
 
+## Language environment
+
+-   Must also be constrained in both space and time
+    -   space: Execution is done within a limited memory environment
+        (can this be done consistently without having to assign our own
+        costs / implementing our own garbage collector?)
+    -   time: Implementations may need to "count" execution steps and
+        halt a program that runs for too many steps.
+-   execution environment
+    -   compiles to native code for production, with appropriate obfuscation
+        to prevent side channel attacks
+    -   however "development environment" can be more loose for fast
+        "live hacking" (have a mutable toplevel, etc)
+    -   Many lisps have long supported both interpreted and compiled
+        code so we don't need to "make a choice"
+
+## Canonicalization
+
 ## Up for consideration
 
+While undelimited continuations are omitted, Delimited continuations
+could potentially be supported, as invoking these is similar to
+calling a procedure which returns.
+Some analysis on how delimited continuations affect capabilities, and
+the extent to which they are useful (or overkill) in the described
+system should be explored.
+
+Will we support writing hygenic macros within the language?
+Some constructs supplied to the base environment will be written
+within hygenic macros, but whether a user of the language can feasibly
+use syntax-rules / syntax-case and friends is up for debate.
+Passing macros between modules in something like W7 which
+fundamentally is a run-time system seems infeasible.
+However, it is likely and even recommended that many of the syntax
+forms provided to the initial environment are written using hygenic
+macros.
+
+
+ - [SRFI-71](https://srfi.schemers.org/srfi-71/srfi-71.html) let/let\*/letrec.  r5rs already specifies multiple value
+   return (a great feature!) but utilizing them via call-by-values
+   is painful.
 -   Type annotations?
     These are not necessarily "necessary", as our language is already
     appropriately constrained.
